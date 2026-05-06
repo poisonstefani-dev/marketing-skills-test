@@ -574,6 +574,79 @@ export default function TestPage({ onBack }: TestPageProps) {
     sessionIdRef.current = null;
   }, [shuffledElements]);
 
+  // ── CASE BLOCK STATE (must live before any early return — Rules of Hooks) ──
+
+  const currentCase: CaseBlock | null = CASE_BLOCKS[caseIndex] ?? null;
+  const currentCaseQuestion = currentCase?.questions[caseQIndex] ?? null;
+  const caseProgressPct = ((caseIndex * 3 + caseQIndex) / (CASE_BLOCKS.length * 3)) * 100;
+
+  const handleCaseAnswer = useCallback((idx: number) => {
+    if (selected !== null || !currentCase || !currentCaseQuestion) return;
+    const correct = idx === currentCaseQuestion.correctIndex;
+    setSelected(idx);
+
+    const caseAntiPattern = !correct ? (currentCaseQuestion.antiPatterns[idx] ?? null) : null;
+
+    currentCaseQuestion.linkedElementIds.forEach(elId => {
+      const el = QUIZ_ELEMENTS.find(e => e.id === elId);
+      if (!el) return;
+      setRecords(prev => [...prev, {
+        elementId: elId,
+        categoryId: el.categoryId,
+        domain: currentCaseQuestion.linkedDomain,
+        questionType: currentCaseQuestion.questionType,
+        difficulty: 'hard',
+        correct,
+        antiPattern: caseAntiPattern,
+      }]);
+      if (correct) {
+        setScores(prev => ({
+          ...prev,
+          [el.categoryId]: {
+            ...prev[el.categoryId],
+            correct: (prev[el.categoryId]?.correct ?? 0) + 1,
+          },
+        }));
+      }
+    });
+
+    // Log case question (once per question, not once per linked element)
+    if (sessionIdRef.current) {
+      testLogger.logQuestion(sessionIdRef.current, {
+        questionId: `case-${caseIndex + 1}-q${caseQIndex + 1}`,
+        domain: currentCaseQuestion.linkedDomain,
+        difficulty: 'hard',
+        questionType: currentCaseQuestion.questionType,
+        questionText: currentCaseQuestion.question,
+        selectedOptionText: currentCaseQuestion.options[idx],
+        correctOptionText: currentCaseQuestion.options[currentCaseQuestion.correctIndex],
+        correct,
+        antiPattern: caseAntiPattern,
+        timeMs: Date.now() - questionShownAtRef.current,
+      });
+    }
+
+    setTimeout(() => {
+      setSelected(null);
+      const nextQ = caseQIndex + 1;
+      if (nextQ < 3) {
+        setCaseQIndex(nextQ);
+        setPhase('case-question');
+      } else {
+        const nextCase = caseIndex + 1;
+        if (nextCase >= CASE_BLOCKS.length) {
+          setPhase('results');
+        } else {
+          setCaseIndex(nextCase);
+          setCaseQIndex(0);
+          setPhase('cases-intro');
+        }
+      }
+    }, 900);
+
+    setPhase('case-feedback');
+  }, [selected, currentCase, currentCaseQuestion, caseQIndex, caseIndex]);
+
   // ── RESULTS ──────────────────────────────────────────────────────────────
 
   if (phase === 'results') {
@@ -805,79 +878,6 @@ export default function TestPage({ onBack }: TestPageProps) {
       </div>
     );
   }
-
-  // ── CASE BLOCKS ──────────────────────────────────────────────────────────
-
-  const currentCase: CaseBlock | null = CASE_BLOCKS[caseIndex] ?? null;
-  const currentCaseQuestion = currentCase?.questions[caseQIndex] ?? null;
-  const caseProgressPct = ((caseIndex * 3 + caseQIndex) / (CASE_BLOCKS.length * 3)) * 100;
-
-  const handleCaseAnswer = useCallback((idx: number) => {
-    if (selected !== null || !currentCase || !currentCaseQuestion) return;
-    const correct = idx === currentCaseQuestion.correctIndex;
-    setSelected(idx);
-
-    const caseAntiPattern = !correct ? (currentCaseQuestion.antiPatterns[idx] ?? null) : null;
-
-    currentCaseQuestion.linkedElementIds.forEach(elId => {
-      const el = QUIZ_ELEMENTS.find(e => e.id === elId);
-      if (!el) return;
-      setRecords(prev => [...prev, {
-        elementId: elId,
-        categoryId: el.categoryId,
-        domain: currentCaseQuestion.linkedDomain,
-        questionType: currentCaseQuestion.questionType,
-        difficulty: 'hard',
-        correct,
-        antiPattern: caseAntiPattern,
-      }]);
-      if (correct) {
-        setScores(prev => ({
-          ...prev,
-          [el.categoryId]: {
-            ...prev[el.categoryId],
-            correct: (prev[el.categoryId]?.correct ?? 0) + 1,
-          },
-        }));
-      }
-    });
-
-    // Log case question (once per question, not once per linked element)
-    if (sessionIdRef.current) {
-      testLogger.logQuestion(sessionIdRef.current, {
-        questionId: `case-${caseIndex + 1}-q${caseQIndex + 1}`,
-        domain: currentCaseQuestion.linkedDomain,
-        difficulty: 'hard',
-        questionType: currentCaseQuestion.questionType,
-        questionText: currentCaseQuestion.question,
-        selectedOptionText: currentCaseQuestion.options[idx],
-        correctOptionText: currentCaseQuestion.options[currentCaseQuestion.correctIndex],
-        correct,
-        antiPattern: caseAntiPattern,
-        timeMs: Date.now() - questionShownAtRef.current,
-      });
-    }
-
-    setTimeout(() => {
-      setSelected(null);
-      const nextQ = caseQIndex + 1;
-      if (nextQ < 3) {
-        setCaseQIndex(nextQ);
-        setPhase('case-question');
-      } else {
-        const nextCase = caseIndex + 1;
-        if (nextCase >= CASE_BLOCKS.length) {
-          setPhase('results');
-        } else {
-          setCaseIndex(nextCase);
-          setCaseQIndex(0);
-          setPhase('cases-intro');
-        }
-      }
-    }, 900);
-
-    setPhase('case-feedback');
-  }, [selected, currentCase, currentCaseQuestion, caseQIndex, caseIndex]);
 
   // ── CASES INTRO ────────────────────────────────────────────────────────────
 
