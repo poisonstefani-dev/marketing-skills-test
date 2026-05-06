@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { ArrowLeft, RotateCcw, ChevronRight } from 'lucide-react';
 import { FUNDAMENTALS } from './fundamentals-questions';
 import type { FundamentalsQuestion } from './fundamentals-questions';
+import * as testLogger from './testLogger';
 
 interface FundamentalsPageProps {
   onBack: () => void;
@@ -117,6 +118,35 @@ export default function FundamentalsPage({ onBack, onTakeFullTest }: Fundamental
   const [phase, setPhase] = useState<'quiz' | 'results'>('quiz');
   const [showExplanation, setShowExplanation] = useState(false);
 
+  // ── Logging refs ──────────────────────────────────────────────────────────
+  const sessionIdRef = useRef<string | null>(null);
+  const questionShownAtRef = useRef<number>(Date.now());
+  const resultLoggedRef = useRef(false);
+
+  // Start a session on mount
+  useEffect(() => {
+    sessionIdRef.current = testLogger.startSession('fundamentals');
+  }, []);
+
+  // Reset question timer whenever the visible question changes
+  useEffect(() => {
+    questionShownAtRef.current = Date.now();
+  }, [index]);
+
+  // Complete the session once when results are first shown
+  useEffect(() => {
+    if (phase === 'results' && sessionIdRef.current && !resultLoggedRef.current) {
+      resultLoggedRef.current = true;
+      const scorePct = Math.round((correctCount / questions.length) * 100);
+      testLogger.completeSession(sessionIdRef.current, {
+        correctCount,
+        totalCount: questions.length,
+        scorePct,
+        level: getLevel(correctCount).title,
+      });
+    }
+  }, [phase, correctCount, questions.length]);
+
   const total = questions.length;
   const current = questions[index];
   const progressPct = (index / total) * 100;
@@ -128,6 +158,22 @@ export default function FundamentalsPage({ onBack, onTakeFullTest }: Fundamental
       const correct = idx === current.correctIndex;
       if (correct) setCorrectCount(c => c + 1);
       setShowExplanation(true);
+
+      // Log question attempt
+      if (sessionIdRef.current) {
+        testLogger.logQuestion(sessionIdRef.current, {
+          questionId: current.id,
+          concept: current.concept,
+          difficulty: 'n/a',
+          questionType: 'knowledge',
+          questionText: current.question,
+          selectedOptionText: current.options[idx],
+          correctOptionText: current.options[current.correctIndex],
+          correct,
+          antiPattern: null,
+          timeMs: Date.now() - questionShownAtRef.current,
+        });
+      }
     },
     [selected, current]
   );
@@ -148,6 +194,10 @@ export default function FundamentalsPage({ onBack, onTakeFullTest }: Fundamental
     setCorrectCount(0);
     setPhase('quiz');
     setShowExplanation(false);
+    // Start a fresh session for the retake
+    resultLoggedRef.current = false;
+    sessionIdRef.current = testLogger.startSession('fundamentals');
+    questionShownAtRef.current = Date.now();
   }, []);
 
   // ── RESULTS ──────────────────────────────────────────────────────────────

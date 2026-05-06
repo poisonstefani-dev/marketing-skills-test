@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
+import * as testLogger from './testLogger';
 import { QUIZ_ELEMENTS, QUIZ_RESULTS } from './quiz-data';
 import type { QuizElement, QuizQuestion } from './quiz-data';
 import { CASE_BLOCKS } from './quiz-cases';
@@ -439,6 +440,47 @@ export default function TestPage({ onBack }: TestPageProps) {
   const currentQuestion = currentElement?.questions[questionIndex] ?? null;
   const progressPct = totalElements > 0 ? (elementIndex / totalElements) * 100 : 0;
 
+  // ── Logging refs ──────────────────────────────────────────────────────────
+  const sessionIdRef = useRef<string | null>(null);
+  const questionShownAtRef = useRef<number>(Date.now());
+  const resultLoggedRef = useRef(false);
+
+  // Reset question timer whenever the visible question changes
+  useEffect(() => {
+    if (phase === 'question' || phase === 'case-question') {
+      questionShownAtRef.current = Date.now();
+    }
+  }, [phase, elementIndex, questionIndex, caseIndex, caseQIndex]);
+
+  // Complete the session once when results are first shown
+  useEffect(() => {
+    if (phase === 'results' && sessionIdRef.current && !resultLoggedRef.current) {
+      resultLoggedRef.current = true;
+      const { scopeScore, depthScore, diagnosticScore, judgementScore, overallScore, antiPatternCounts, domainMap } =
+        computeBreakdown(records);
+      const level = getLevel(overallScore);
+      const profileKey = detectProfile(scopeScore, depthScore, diagnosticScore, judgementScore, overallScore, domainMap);
+      testLogger.completeSession(sessionIdRef.current, {
+        correctCount: records.filter(r => r.correct).length,
+        totalCount: records.length,
+        overallScore,
+        scopeScore,
+        depthScore,
+        diagnosticScore,
+        judgementScore,
+        profile: PROFILES[profileKey]?.name ?? profileKey,
+        level: level.title,
+        antiPatterns: antiPatternCounts,
+        domainScores: Object.values(domainMap).map(d => ({
+          domain: d.domain,
+          correct: d.correct,
+          total: d.total,
+          pct: d.total > 0 ? Math.round((d.correct / d.total) * 100) : 0,
+        })),
+      });
+    }
+  }, [phase, records]);
+
   const startQuiz = useCallback(() => {
     setPhase('question');
     setElementIndex(0);
@@ -448,6 +490,10 @@ export default function TestPage({ onBack }: TestPageProps) {
     setRecords([]);
     setCaseIndex(0);
     setCaseQIndex(0);
+    // Start a fresh log session
+    resultLoggedRef.current = false;
+    sessionIdRef.current = testLogger.startSession('full');
+    questionShownAtRef.current = Date.now();
   }, [shuffledElements]);
 
   const handleAnswer = useCallback((idx: number) => {
@@ -478,6 +524,23 @@ export default function TestPage({ onBack }: TestPageProps) {
       antiPattern,
     }]);
 
+    // Log to persistent store
+    if (sessionIdRef.current) {
+      testLogger.logQuestion(sessionIdRef.current, {
+        questionId: `${currentElement.id}-${currentQuestion.difficulty}`,
+        elementId: currentElement.id,
+        domain: getDomain(currentElement.id, currentElement),
+        difficulty: currentQuestion.difficulty,
+        questionType: qType,
+        questionText: currentQuestion.question,
+        selectedOptionText: currentQuestion.options[idx],
+        correctOptionText: currentQuestion.options[currentQuestion.correctIndex],
+        correct,
+        antiPattern: antiPattern ?? null,
+        timeMs: Date.now() - questionShownAtRef.current,
+      });
+    }
+
     setTimeout(() => {
       setSelected(null);
       if (correct && questionIndex < 2) {
@@ -507,6 +570,8 @@ export default function TestPage({ onBack }: TestPageProps) {
     setRecords([]);
     setCaseIndex(0);
     setCaseQIndex(0);
+    resultLoggedRef.current = false;
+    sessionIdRef.current = null;
   }, [shuffledElements]);
 
   // ── RESULTS ──────────────────────────────────────────────────────────────
@@ -752,6 +817,8 @@ export default function TestPage({ onBack }: TestPageProps) {
     const correct = idx === currentCaseQuestion.correctIndex;
     setSelected(idx);
 
+    const caseAntiPattern = !correct ? (currentCaseQuestion.antiPatterns[idx] ?? null) : null;
+
     currentCaseQuestion.linkedElementIds.forEach(elId => {
       const el = QUIZ_ELEMENTS.find(e => e.id === elId);
       if (!el) return;
@@ -762,7 +829,7 @@ export default function TestPage({ onBack }: TestPageProps) {
         questionType: currentCaseQuestion.questionType,
         difficulty: 'hard',
         correct,
-        antiPattern: !correct ? (currentCaseQuestion.antiPatterns[idx] ?? null) : null,
+        antiPattern: caseAntiPattern,
       }]);
       if (correct) {
         setScores(prev => ({
@@ -774,6 +841,22 @@ export default function TestPage({ onBack }: TestPageProps) {
         }));
       }
     });
+
+    // Log case question (once per question, not once per linked element)
+    if (sessionIdRef.current) {
+      testLogger.logQuestion(sessionIdRef.current, {
+        questionId: `case-${caseIndex + 1}-q${caseQIndex + 1}`,
+        domain: currentCaseQuestion.linkedDomain,
+        difficulty: 'hard',
+        questionType: currentCaseQuestion.questionType,
+        questionText: currentCaseQuestion.question,
+        selectedOptionText: currentCaseQuestion.options[idx],
+        correctOptionText: currentCaseQuestion.options[currentCaseQuestion.correctIndex],
+        correct,
+        antiPattern: caseAntiPattern,
+        timeMs: Date.now() - questionShownAtRef.current,
+      });
+    }
 
     setTimeout(() => {
       setSelected(null);
