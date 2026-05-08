@@ -7,8 +7,10 @@ import './index.css';
 
 type View = 'landing' | 'fundamentals' | 'full-test';
 
+const IS_PREVIEW = new URLSearchParams(window.location.search).get('preview') === 'results';
+
 function App() {
-  const [view, setView] = useState<View>('landing');
+  const [view, setView] = useState<View>(IS_PREVIEW ? 'full-test' : 'landing');
 
   if (view === 'fundamentals') {
     return (

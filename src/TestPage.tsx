@@ -231,6 +231,140 @@ const ANTI_PATTERN_META: Record<string, { label: string; desc: string }> = {
   brand_vagueness: { label: 'Brand Vagueness', desc: 'Chooses awareness without connecting it to consideration or purchase triggers.' },
 };
 
+// ─── PREVIEW MODE ────────────────────────────────────────────────────────────
+
+const IS_PREVIEW = new URLSearchParams(window.location.search).get('preview') === 'results';
+
+type PreviewProfileKey = 't-shaped' | 'full-stack' | 'surface-generalist' | 'channel-specialist' | 'tool-aware';
+
+const PREVIEW_PROFILES: Record<PreviewProfileKey, { label: string; records: QuestionRecord[] }> = {
+  't-shaped': {
+    label: 'T-Shaped',
+    records: [
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'rfm',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'icp',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'medium',correct:true},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'mixpanel',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'google_ads_p',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'knowledge',difficulty:'medium',correct:true},
+      {elementId:'klaviyo',categoryId:'email',domain:'Email Marketing',questionType:'applied',difficulty:'easy',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'k_factor',categoryId:'growth',domain:'Growth & Retention',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'sixsense_dg',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'executive',difficulty:'medium',correct:true},
+      {elementId:'highspot',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'braze_ret',categoryId:'crm',domain:'CRM & Lifecycle',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'gainsight',categoryId:'crm',domain:'CRM & Lifecycle',questionType:'executive',difficulty:'hard',correct:true},
+    ],
+  },
+  'full-stack': {
+    label: 'Full-Stack',
+    records: [
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'rfm',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'medium',correct:true},
+      {elementId:'icp',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'mixpanel',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'knowledge',difficulty:'medium',correct:true},
+      {elementId:'klaviyo',categoryId:'email',domain:'Email Marketing',questionType:'applied',difficulty:'easy',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'medium',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'volume_bias'},
+      {elementId:'sixsense_dg',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'executive',difficulty:'medium',correct:true},
+      {elementId:'highspot',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'braze_ret',categoryId:'crm',domain:'CRM & Lifecycle',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'gainsight',categoryId:'crm',domain:'CRM & Lifecycle',questionType:'executive',difficulty:'medium',correct:false,antiPattern:'discount_bias'},
+    ],
+  },
+  'surface-generalist': {
+    label: 'Generalist',
+    records: [
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'rfm',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'icp',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'brand_vagueness'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'mixpanel',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'knowledge',difficulty:'medium',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'klaviyo',categoryId:'email',domain:'Email Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'medium',correct:false,antiPattern:'volume_bias'},
+      {elementId:'k_factor',categoryId:'growth',domain:'Growth & Retention',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'brand_vagueness'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'attribution_naivety'},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'volume_bias'},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'sixsense_dg',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'acquisition_fixation'},
+    ],
+  },
+  'channel-specialist': {
+    label: 'Specialist',
+    records: [
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'google_ads_p',categoryId:'perf',domain:'Performance Marketing',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'pmax',categoryId:'perf',domain:'Performance Marketing',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'search-intent',categoryId:'seo',domain:'SEO & Search',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'quality-score',categoryId:'seo',domain:'SEO & Search',questionType:'diagnostic',difficulty:'hard',correct:true},
+      {elementId:'rlsa',categoryId:'seo',domain:'SEO & Search',questionType:'executive',difficulty:'hard',correct:true},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'brand_vagueness'},
+      {elementId:'rfm',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'icp',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'budget_bias'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'attribution_naivety'},
+      {elementId:'mixpanel',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'attribution_naivety'},
+      {elementId:'posthog',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'klaviyo',categoryId:'email',domain:'Email Marketing',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'volume_bias'},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'braze_ret',categoryId:'email',domain:'Email Marketing',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'discount_bias'},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'k_factor',categoryId:'growth',domain:'Growth & Retention',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'volume_bias'},
+      {elementId:'aarrr',categoryId:'growth',domain:'Growth & Retention',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'sixsense_dg',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'budget_bias'},
+      {elementId:'bombora_dg',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'highspot',categoryId:'b2b',domain:'B2B & Demand Gen',questionType:'diagnostic',difficulty:'hard',correct:false,antiPattern:'brand_vagueness'},
+    ],
+  },
+  'tool-aware': {
+    label: 'Tool-Aware',
+    records: [
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'rfm',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'easy',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'applied',difficulty:'medium',correct:true},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'knowledge',difficulty:'medium',correct:true},
+      {elementId:'klaviyo',categoryId:'email',domain:'Email Marketing',questionType:'applied',difficulty:'easy',correct:true},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'medium',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'k_factor',categoryId:'growth',domain:'Growth & Retention',questionType:'applied',difficulty:'medium',correct:false,antiPattern:'volume_bias'},
+      {elementId:'aarrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'easy',correct:false,antiPattern:'volume_bias'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'knowledge',difficulty:'hard',correct:true},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'applied',difficulty:'hard',correct:true},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'knowledge',difficulty:'hard',correct:true},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'applied',difficulty:'hard',correct:false,antiPattern:'brand_vagueness'},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'knowledge',difficulty:'hard',correct:false,antiPattern:'acquisition_fixation'},
+      {elementId:'jtbd',categoryId:'strategy',domain:'Strategy & Market Thinking',questionType:'diagnostic',difficulty:'medium',correct:false,antiPattern:'brand_vagueness'},
+      {elementId:'ga4',categoryId:'analytics',domain:'Analytics & Experimentation',questionType:'diagnostic',difficulty:'medium',correct:false,antiPattern:'attribution_naivety'},
+      {elementId:'meta_ads',categoryId:'perf',domain:'Performance Marketing',questionType:'diagnostic',difficulty:'medium',correct:false,antiPattern:'budget_bias'},
+      {elementId:'ahrefs',categoryId:'seo',domain:'SEO & Search',questionType:'systems',difficulty:'medium',correct:true},
+      {elementId:'email-deliverability',categoryId:'email',domain:'Email Marketing',questionType:'diagnostic',difficulty:'medium',correct:false,antiPattern:'tool_solution_bias'},
+      {elementId:'nrr',categoryId:'growth',domain:'Growth & Retention',questionType:'systems',difficulty:'medium',correct:false,antiPattern:'discount_bias'},
+    ],
+  },
+};
+
 // ─── SHUFFLE ─────────────────────────────────────────────────────────────────
 
 function shuffleQuestion(q: QuizQuestion): QuizQuestion {
@@ -434,6 +568,15 @@ export default function TestPage({ onBack }: TestPageProps) {
   const [records, setRecords] = useState<QuestionRecord[]>([]);
   const [caseIndex, setCaseIndex] = useState(0);
   const [caseQIndex, setCaseQIndex] = useState(0);
+
+  // ── Preview mode (URL: ?preview=results) ──────────────────────────────────
+  const [previewProfile, setPreviewProfile] = useState<PreviewProfileKey>('t-shaped');
+
+  useEffect(() => {
+    if (!IS_PREVIEW) return;
+    setRecords(PREVIEW_PROFILES[previewProfile].records);
+    setPhase('results');
+  }, [previewProfile]);
 
   const totalElements = shuffledElements.length;
   const currentElement = shuffledElements[elementIndex] ?? null;
@@ -866,15 +1009,41 @@ export default function TestPage({ onBack }: TestPageProps) {
             </div>
 
             {/* ── Retake ── */}
-            <div className="flex justify-center pt-4 pb-6">
-              <button onClick={resetQuiz}
-                className="flex items-center gap-2 px-[22px] py-[11px] bg-[#0071e3] text-white rounded-full text-[17px] font-normal hover:bg-[#0077ed] transition-colors cursor-pointer">
-                <RotateCcw size={15} strokeWidth={1.8} /> Retake assessment
-              </button>
-            </div>
+            {!IS_PREVIEW && (
+              <div className="flex justify-center pt-4 pb-6">
+                <button onClick={resetQuiz}
+                  className="flex items-center gap-2 px-[22px] py-[11px] bg-[#0071e3] text-white rounded-full text-[17px] font-normal hover:bg-[#0077ed] transition-colors cursor-pointer">
+                  <RotateCcw size={15} strokeWidth={1.8} /> Retake assessment
+                </button>
+              </div>
+            )}
+
+            {/* bottom padding so switcher doesn't overlap last card */}
+            {IS_PREVIEW && <div className="pb-20" />}
 
           </div>
         </div>
+
+        {/* ── Preview profile switcher (only in ?preview=results mode) ── */}
+        {IS_PREVIEW && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-[#1d1d1f]/90 backdrop-blur-xl rounded-full px-3 py-2 shadow-2xl">
+            <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-[#707070] pr-2">Profile</span>
+            {(Object.keys(PREVIEW_PROFILES) as PreviewProfileKey[]).map(key => (
+              <button
+                key={key}
+                onClick={() => setPreviewProfile(key)}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all cursor-pointer ${
+                  previewProfile === key
+                    ? 'bg-white text-[#1d1d1f]'
+                    : 'text-[#a1a1a6] hover:text-white'
+                }`}
+              >
+                {PREVIEW_PROFILES[key].label}
+              </button>
+            ))}
+          </div>
+        )}
+
       </div>
     );
   }
